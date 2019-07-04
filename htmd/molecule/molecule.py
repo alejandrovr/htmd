@@ -1176,7 +1176,31 @@ class Molecule:
             os.remove(pdb)
         if retval is not None:
             return retval
-
+        
+    def _moveVMD(self, action='rotx'):
+        vhandle = getCurrentViewer()
+        rot_value = 10.0
+        scale_in_value = 1.2
+        scale_out_value = 0.8
+        if action == 'rotx':
+            vhandle.send("rotate x by {}".format(rot_value))
+        elif action == 'roty':
+            vhandle.send("rotate y by {}".format(rot_value))
+        elif action == 'rotz':
+            vhandle.send("rotate z by {}".format(rot_value))
+        elif action == 'scalein':
+            vhandle.send("scale by {}".format(scale_in_value))
+        elif action == 'scaleout':
+            vhandle.send("scale by {}".format(scale_out_value))    
+        else:
+            print('No action.')
+        name = 'MARUXA'
+        vhandle.send('mol rename top "' + name + '"')
+        self._tempreps.append(self.reps)
+        self._tempreps._repsVMD(vhandle)
+        self._tempreps.remove()
+        
+        
     def _viewVMD(self, psf, pdb, xtc, vhandle, name, guessbonds):
         if name is None:
             name = self.viewname
