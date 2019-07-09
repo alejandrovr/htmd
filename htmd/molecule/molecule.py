@@ -232,7 +232,7 @@ class Molecule:
         self.reps = Representations(self)
         self._tempreps = Representations(self)
         self.viewname = name
-
+        self.n_captions = 0
         if filename is not None:
             self.read(filename, **kwargs)
 
@@ -1178,8 +1178,10 @@ class Molecule:
             return retval
         
     def _moveVMD(self, action='rotx'):
+        from PIL import Image
         vhandle = getCurrentViewer()
-        rot_value = 10.0
+        #TODO: duplicate rotation to account for the opposite direction
+        rot_value = 15.0
         scale_in_value = 1.2
         scale_out_value = 0.8
         if action == 'rotx':
@@ -1191,15 +1193,16 @@ class Molecule:
         elif action == 'scalein':
             vhandle.send("scale by {}".format(scale_in_value))
         elif action == 'scaleout':
-            vhandle.send("scale by {}".format(scale_out_value))    
+            vhandle.send("scale by {}".format(scale_out_value))              
         else:
-            print('No action.')
-        name = 'MARUXA'
-        vhandle.send('mol rename top "' + name + '"')
-        self._tempreps.append(self.reps)
-        self._tempreps._repsVMD(vhandle)
-        self._tempreps.remove()
+            pass
+            
+        self.n_captions += 1
         
+        vhandle.send("render snapshot /home/alejandro/virtual_chemist/snapshots/vmdscene{}.tga save %s".format(self.n_captions))
+        im = Image.open("/home/alejandro/virtual_chemist/snapshots/vmdscene{}.tga".format(self.n_captions))
+        b_and_w = np.array(im).sum(axis=-1) / 765
+        return b_and_w
         
     def _viewVMD(self, psf, pdb, xtc, vhandle, name, guessbonds):
         if name is None:
