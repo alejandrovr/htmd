@@ -218,7 +218,7 @@ class VMD:
         self.send(rendercommand)
         if renderer == 'tachyon':
             os.system('{tachyon} -res {resx} {resy} -aasamples {aa} -add_skylight {sl} {out} -format PSD48 -o {out}.psd'.format(tachyon=tachyon, resx=resolution[0], resy=resolution[1], aa=aasamples, sl=skylight, out=outname))
-        logger.debug(rendercommand)
+        #logger.debug(rendercommand)
         if not os.path.exists(outname+tmpext):
             raise RuntimeError('Rendering failed to produce image with following command: {}'.format(rendercommand))
         if os.path.exists(outname):

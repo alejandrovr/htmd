@@ -1195,12 +1195,10 @@ class Molecule:
         elif action == 'scaleout':
             vhandle.send("scale by {}".format(scale_out_value))              
         else:
-            pass
-            
+            pass          
         self.n_captions += 1
-        
-        vhandle.send("render snapshot /home/alejandro/virtual_chemist/snapshots/vmdscene{}.tga save %s".format(self.n_captions))
-        im = Image.open("/home/alejandro/virtual_chemist/snapshots/vmdscene{}.tga".format(self.n_captions))
+        vhandle.send("render snapshot /home/alejandro/rl_chemist/snapshots/vmdscene{}.tga".format(self.n_captions))
+        im = Image.open("/home/alejandro/rl_chemist/snapshots/vmdscene{}.tga".format(self.n_captions))
         b_and_w = np.array(im).sum(axis=-1) / 765
         return b_and_w
         
