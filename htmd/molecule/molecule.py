@@ -233,9 +233,9 @@ class Molecule:
         self._tempreps = Representations(self)
         self.viewname = name
         self.n_captions = 0
-        self.rotbonds = ['index 1 2 3 4','index 2 3 4 5']
+        self.rotbonds = ['index 1 2 3 4','index 2 3 4 5','index 7 8 9 10']
         self.iter_rotbonds = iter(self.rotbonds)
-        self.onenextdih = False
+        self.current_dih = None
         if filename is not None:
             self.read(filename, **kwargs)
 
@@ -1187,31 +1187,47 @@ class Molecule:
         rot_value = 15.0
         scale_in_value = 1.2
         scale_out_value = 0.8
+
         if action == 'rotx':
             vhandle.send("rotate x by {}".format(rot_value))
+
         elif action == 'roty':
             vhandle.send("rotate y by {}".format(rot_value))
+
         elif action == 'rotz':
             vhandle.send("rotate z by {}".format(rot_value))
+
         elif action == 'scalein':
             vhandle.send("scale by {}".format(scale_in_value))
+
         elif action == 'scaleout':
             vhandle.send("scale by {}".format(scale_out_value))  
+
         elif action == 'nextdih':
             try:
                 nextdih_sel = next(self.iter_rotbonds)
+                self.current_dih = nextdih_sel
             except: #restart if end reached
                 self.iter_rotbonds = iter(self.rotbonds)
                 nextdih_sel = next(self.iter_rotbonds)
-
-            if self.onenextdih:
+            if self.current_dih:
                 vhandle.send('mol delrep 1 top')
             vhandle.send('mol selection {}'.format(nextdih_sel))
             vhandle.send('mol representation {}'.format('Licorice'))
             vhandle.send('mol addrep top')   
-            self.onenextdih = True           
+
+        elif action == 'movedih':
+            current_dih = [int(i) for i in self.current_dih.split()[1:]]
+            print('selected dih',current_dih)
+            dih_now = self.getDihedral(current_dih)
+            print('current angle',dih_now)
+            mut_dih = dih_now + 0.5
+            self.setDihedral(current_dih,mut_dih)
+            self.write('here.pdb')
+            vhandle.send("mol addfile {/home/alejandro/rl_chemist/here.pdb} type {pdb} first 0 last -1 step 1 waitfor 1 0")
         else:
-            pass          
+            pass     
+     
         self.n_captions += 1
         vhandle.send("render snapshot /home/alejandro/rl_chemist/snapshots/vmdscene{}.tga".format(self.n_captions))
         im = Image.open("/home/alejandro/rl_chemist/snapshots/vmdscene{}.tga".format(self.n_captions))
