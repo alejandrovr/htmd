@@ -233,6 +233,9 @@ class Molecule:
         self._tempreps = Representations(self)
         self.viewname = name
         self.n_captions = 0
+        self.rotbonds = ['index 1 2 3 4','index 2 3 4 5']
+        self.iter_rotbonds = iter(self.rotbonds)
+        self.onenextdih = False
         if filename is not None:
             self.read(filename, **kwargs)
 
@@ -1193,7 +1196,20 @@ class Molecule:
         elif action == 'scalein':
             vhandle.send("scale by {}".format(scale_in_value))
         elif action == 'scaleout':
-            vhandle.send("scale by {}".format(scale_out_value))              
+            vhandle.send("scale by {}".format(scale_out_value))  
+        elif action == 'nextdih':
+            try:
+                nextdih_sel = next(self.iter_rotbonds)
+            except: #restart if end reached
+                self.iter_rotbonds = iter(self.rotbonds)
+                nextdih_sel = next(self.iter_rotbonds)
+
+            if self.onenextdih:
+                vhandle.send('mol delrep 1 top')
+            vhandle.send('mol selection {}'.format(nextdih_sel))
+            vhandle.send('mol representation {}'.format('Licorice'))
+            vhandle.send('mol addrep top')   
+            self.onenextdih = True           
         else:
             pass          
         self.n_captions += 1
