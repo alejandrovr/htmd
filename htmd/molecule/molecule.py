@@ -233,8 +233,6 @@ class Molecule:
         self._tempreps = Representations(self)
         self.viewname = name
         self.n_captions = 0
-        self.rotbonds = ['index 1 2 3 4','index 2 3 4 5','index 7 8 9 10']
-        self.iter_rotbonds = iter(self.rotbonds)
         self.current_dih = None
         if filename is not None:
             self.read(filename, **kwargs)
@@ -892,6 +890,26 @@ class Molecule:
         right = np.append(right,bond[1])
         return left, right
 
+
+    def get_rot_bonds(self):
+        from htmd.molecule.util import guessAnglesAndDihedrals
+        self.bonds = self._guessBonds()
+        self.angles, self.dihedrals = guessAnglesAndDihedrals(self.bonds)
+        dih2rotate = []
+        for dih in self.dihedrals:
+            rotbond = dih.tolist()[1:3]
+            try:
+                l,r = self.get_LR(rotbond, bonds=self.bonds, check_cycle=True)
+                dih2rotate.append(dih)
+            except:
+                pass #inside cycle
+
+
+        self.rotbonds = ['index {}'.format(' '.join([str(j) for j in i])) for i in dih2rotate] 
+        self.iter_rotbonds = iter(self.rotbonds)
+        return dih2rotate
+
+
     def center(self, loc=(0, 0, 0), sel='all'):
         """ Moves the geometric center of the Molecule to a given location
 
@@ -1263,6 +1281,7 @@ class Molecule:
             vhandle.send('mol addrep top')   
 
         elif action == 'movedih':
+            #TODO: depict atoms in the Right side in another style/color
             current_dih = [int(i) for i in self.current_dih.split()[1:]]
             print('selected dih',current_dih)
             dih_now = self.getDihedral(current_dih)
