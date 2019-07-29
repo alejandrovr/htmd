@@ -846,6 +846,52 @@ class Molecule:
         M = rotationMatrix(rotax, radians-rads)
         self.rotateBy(M, center=self.coords[atom_quad[1], :, self.frame], sel=right)
 
+    def get_LR(self, bond, bonds=None,check_cycle=False):
+        """ Sets the angle of a dihedral.
+        
+        Parameters
+        ----------
+        atom_quad : list
+            Four atom indexes corresponding to the atoms defining the dihedral
+        radians : float
+            The angle in radians to which we want to set the dihedral
+        bonds : np.ndarray
+            An array containing all bonds of the molecule. This is needed if multiple modifications are done as the
+            bond guessing can get messed up if atoms come very close after the rotation.
+
+        Examples
+        --------
+        >>> mol.setDihedral([0, 5, 8, 12], 0.16)
+        >>> # If we perform multiple modifications, calculate bonds first and pass them as argument to be safe
+        >>> bonds = mol._getBonds()
+        >>> mol.setDihedral([0, 5, 8, 12], 0.16, bonds=bonds)
+        >>> mol.setDihedral([18, 20, 24, 30], -1.8, bonds=bonds)
+        """
+        import scipy.sparse.csgraph as sp
+        from htmd.numbautil import dihedralAngle
+        if bonds is None:
+            bonds = self._getBonds()
+
+        # Now we have to make the lists of atoms that are on either side of the dihedral bond
+        natoms = self.numAtoms
+        conn = np.zeros((natoms, natoms), dtype=np.bool)
+        for b in bonds:
+            conn[b[0], b[1]] = True
+            conn[b[1], b[0]] = True
+
+        # disconnect the structure across the dihedral bond
+        conn[[bond[0], bond[1]]] = 0
+        conn[[bond[1], bond[0]]] = 0
+        left = np.unique(sp.breadth_first_tree(conn, bond[0], directed=False).indices.flatten())
+        right = np.unique(sp.breadth_first_tree(conn, bond[1], directed=False).indices.flatten())
+
+        if (bond[1] in left) or (bond[0] in right) and check_cycle:
+            return -1
+
+        left = np.append(left,bond[0])
+        right = np.append(right,bond[1])
+        return left, right
+
     def center(self, loc=(0, 0, 0), sel='all'):
         """ Moves the geometric center of the Molecule to a given location
 
@@ -1223,7 +1269,7 @@ class Molecule:
             print('current angle',dih_now)
             mut_dih = dih_now + 0.5
             self.setDihedral(current_dih,mut_dih)
-            self.write('here.pdb')
+            self.write('/home/alejandro/rl_chemist/here.pdb')
             vhandle.send("mol addfile {/home/alejandro/rl_chemist/here.pdb} type {pdb} first 0 last -1 step 1 waitfor 1 0")
         else:
             pass     
