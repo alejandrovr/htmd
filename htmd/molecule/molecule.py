@@ -904,9 +904,30 @@ class Molecule:
             except:
                 pass #inside cycle
 
+        rot_bond = {}
+        for dih in dih2rotate:
+            centralbond = tuple(dih[1:3])
+            if centralbond in rot_bond:
+                rot_bond[centralbond].append(dih)
+            elif centralbond[::-1] in rot_bond:
+                rot_bond[centralbond[::-1]].append(dih)
+            else:
+                rot_bond[centralbond] = [dih]
 
-        self.rotbonds = ['index {}'.format(' '.join([str(j) for j in i])) for i in dih2rotate] 
-        self.iter_rotbonds = iter(self.rotbonds)
+        nr_rotbonds = []
+        for key in rot_bond:
+            if key in nr_rotbonds or key[::-1] in nr_rotbonds:
+                continue
+            else:
+                nr_rotbonds.append(key)
+
+        self.rotbond_LR = {}
+        for rb in nr_rotbonds:
+            l,r = self.get_LR(rb, bonds=self.bonds,check_cycle=False)
+            self.rotbond_LR[rb] = (l,r)
+
+        self.rotbonds = [key for key in self.rotbond_LR] 
+        self.iter_rotbonds = iter(self.rotbonds) #iterator of keys
         return dih2rotate
 
 
@@ -1275,10 +1296,37 @@ class Molecule:
                 self.iter_rotbonds = iter(self.rotbonds)
                 nextdih_sel = next(self.iter_rotbonds)
             if self.current_dih:
-                vhandle.send('mol delrep 1 top')
-            vhandle.send('mol selection {}'.format(nextdih_sel))
+                vhandle.send('mol delrep 2 top') #delete L side
+                vhandle.send('mol delrep 1 top') #delete previous dihedral
+
+            rotbond_sel = 'index {} {}'.format(nextdih_sel[0],nextdih_sel[1])
+            self.side = 0 #by default we rotate Left
+            to_rotate_sel = 'index ' + ' '.join([str(i) for i in self.rotbond_LR[self.current_dih][self.side].tolist()])
+            print('SEL TO ROTATE IS',to_rotate_sel)
+            vhandle.send('mol selection {}'.format(rotbond_sel))
             vhandle.send('mol representation {}'.format('Licorice'))
             vhandle.send('mol addrep top')   
+            
+            vhandle.send('mol selection {}'.format(to_rotate_sel))
+            vhandle.send('mol representation {}'.format('Licorice'))
+            vhandle.send('mol addrep top')  
+            vhandle.send('mol modmaterial 2 0 Glass1')
+ 
+
+        elif action == 'switch_dir':
+            if self.side == 1:
+                self.side = 0
+            else:
+                self.side = 1
+
+            to_rotate_sel = 'index ' + ' '.join([str(i) for i in self.rotbond_LR[self.current_dih][self.side].tolist()])
+            print('SEL TO ROTATE IS:',to_rotate_sel)
+            vhandle.send('mol delrep 2 top') 
+            vhandle.send('mol selection {}'.format(to_rotate_sel))
+            vhandle.send('mol representation {}'.format('Licorice'))
+            vhandle.send('mol addrep top') 
+            vhandle.send('mol modmaterial 2 0 Glass1')
+  
 
         elif action == 'movedih':
             #TODO: depict atoms in the Right side in another style/color
