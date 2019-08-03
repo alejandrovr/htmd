@@ -795,7 +795,7 @@ class Molecule:
         from htmd.numbautil import dihedralAngle
         return dihedralAngle(self.coords[atom_quad, :, self.frame])
 
-    def setDihedral(self, atom_quad, radians, bonds=None):
+    def setDihedral(self, atom_quad, radians, bonds=None, rotsel=None):
         """ Sets the angle of a dihedral.
         
         Parameters
@@ -834,6 +834,10 @@ class Molecule:
         left = np.unique(sp.breadth_first_tree(conn, atom_quad[1], directed=False).indices.flatten())
         right = np.unique(sp.breadth_first_tree(conn, atom_quad[2], directed=False).indices.flatten())
 
+
+        if not rotsel:
+            rotsel = right
+
         if (atom_quad[2] in left) or (atom_quad[1] in right):
             raise RuntimeError('Loop detected in molecule. Cannot change dihedral')
 
@@ -842,7 +846,7 @@ class Molecule:
         rotax /= np.linalg.norm(rotax)
         rads = dihedralAngle(quad_coords)
         M = rotationMatrix(rotax, radians-rads)
-        self.rotateBy(M, center=self.coords[atom_quad[1], :, self.frame], sel=right)
+        self.rotateBy(M, center=self.coords[atom_quad[1], :, self.frame], sel=rotsel)
 
     def get_LR(self, bond, bonds=None,check_cycle=False):
         """ Sets the angle of a dihedral.
@@ -920,6 +924,9 @@ class Molecule:
                 continue
             else:
                 nr_rotbonds.append(key)
+                
+        print('rot_bond', rot_bond)
+        print('nr_rotbonds', nr_rotbonds)
 
         self.rotbond_LR = {}
         for rb in nr_rotbonds:
@@ -928,6 +935,9 @@ class Molecule:
 
         self.rotbonds = [key for key in self.rotbond_LR] 
         self.iter_rotbonds = iter(self.rotbonds) #iterator of keys
+        self.dih_example = {}
+        for key in self.rotbonds:
+            self.dih_example[key] = rot_bond[key][0].tolist()
         return dih2rotate
 
 
@@ -1329,13 +1339,14 @@ class Molecule:
   
 
         elif action == 'movedih':
-            #TODO: depict atoms in the Right side in another style/color
-            current_dih = [int(i) for i in self.current_dih.split()[1:]]
-            print('selected dih',current_dih)
-            dih_now = self.getDihedral(current_dih)
+            #current_dih = [int(i) for i in self.current_dih.split()[1:]]
+            dih2move = self.dih_example[self.current_dih]
+            atoms2rot = self.rotbond_LR[self.current_dih][self.side]
+            #which direction?
+            dih_now = self.getDihedral(dih2move)
             print('current angle',dih_now)
             mut_dih = dih_now + 0.5
-            self.setDihedral(current_dih,mut_dih)
+            self.setDihedral(dih2move,mut_dih,rotsel=atoms2rot.tolist())
             self.write('/home/alejandro/rl_chemist/here.pdb')
             vhandle.send("mol addfile {/home/alejandro/rl_chemist/here.pdb} type {pdb} first 0 last -1 step 1 waitfor 1 0")
         else:
