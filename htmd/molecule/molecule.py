@@ -924,9 +924,6 @@ class Molecule:
                 continue
             else:
                 nr_rotbonds.append(key)
-                
-        print('rot_bond', rot_bond)
-        print('nr_rotbonds', nr_rotbonds)
 
         self.rotbond_LR = {}
         for rb in nr_rotbonds:
@@ -1278,7 +1275,6 @@ class Molecule:
     def _moveVMD(self, action='rotx'):
         from PIL import Image
         vhandle = getCurrentViewer()
-        #TODO: duplicate rotation to account for the opposite direction
         rot_value = 15.0
         scale_in_value = 1.2
         scale_out_value = 0.8
@@ -1312,7 +1308,6 @@ class Molecule:
             rotbond_sel = 'index {} {}'.format(nextdih_sel[0],nextdih_sel[1])
             self.side = 0 #by default we rotate Left
             to_rotate_sel = 'index ' + ' '.join([str(i) for i in self.rotbond_LR[self.current_dih][self.side].tolist()])
-            print('SEL TO ROTATE IS',to_rotate_sel)
             vhandle.send('mol selection {}'.format(rotbond_sel))
             vhandle.send('mol representation {}'.format('Licorice'))
             vhandle.send('mol addrep top')   
@@ -1320,7 +1315,7 @@ class Molecule:
             vhandle.send('mol selection {}'.format(to_rotate_sel))
             vhandle.send('mol representation {}'.format('Licorice'))
             vhandle.send('mol addrep top')  
-            vhandle.send('mol modmaterial 2 0 Glass1')
+            vhandle.send('mol modmaterial 2 1 Glass1')
  
 
         elif action == 'switch_dir':
@@ -1330,12 +1325,11 @@ class Molecule:
                 self.side = 1
 
             to_rotate_sel = 'index ' + ' '.join([str(i) for i in self.rotbond_LR[self.current_dih][self.side].tolist()])
-            print('SEL TO ROTATE IS:',to_rotate_sel)
             vhandle.send('mol delrep 2 top') 
             vhandle.send('mol selection {}'.format(to_rotate_sel))
             vhandle.send('mol representation {}'.format('Licorice'))
             vhandle.send('mol addrep top') 
-            vhandle.send('mol modmaterial 2 0 Glass1')
+            vhandle.send('mol modmaterial 2 1 Glass1')
   
 
         elif action == 'movedih':
@@ -1344,11 +1338,11 @@ class Molecule:
             atoms2rot = self.rotbond_LR[self.current_dih][self.side]
             #which direction?
             dih_now = self.getDihedral(dih2move)
-            print('current angle',dih_now)
             mut_dih = dih_now + 0.5
             self.setDihedral(dih2move,mut_dih,rotsel=atoms2rot.tolist())
             self.write('/home/alejandro/rl_chemist/here.pdb')
-            vhandle.send("mol addfile {/home/alejandro/rl_chemist/here.pdb} type {pdb} first 0 last -1 step 1 waitfor 1 0")
+            vhandle.send("mol addfile {/home/alejandro/rl_chemist/here.pdb} type {pdb} first 0 last -1 step 1 waitfor 1 1")
+            #mol addfile {/home/alejandro/rl_chemist/here.pdb} type {pdb} first 0 last -1 step 1 waitfor 1 1
         else:
             pass     
      
