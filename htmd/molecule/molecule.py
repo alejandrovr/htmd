@@ -649,7 +649,7 @@ class Molecule:
         """
         return deepcopy(self)
 
-    def filter(self, sel, _logger=True):
+    def filter(self, sel, _logger=False):
         """Removes all atoms not included in the selection
 
         Parameters
@@ -1275,7 +1275,7 @@ class Molecule:
     def _moveVMD(self, action='rotx'):
         from PIL import Image
         vhandle = getCurrentViewer()
-        rot_value = 15.0
+        rot_value = 45.0
         scale_in_value = 1.2
         scale_out_value = 0.8
 
