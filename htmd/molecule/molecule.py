@@ -14,6 +14,7 @@ from os import path
 import logging
 import os
 from unittest import TestCase
+from scipy import ndimage
 
 logger = logging.getLogger(__name__)
 
@@ -1272,12 +1273,12 @@ class Molecule:
         if retval is not None:
             return retval
         
-    def _moveVMD(self, action='rotx'):
+    def _moveVMD(self, VMD_mol_IDX, action='rotx'):
         from PIL import Image
         vhandle = getCurrentViewer()
         rot_value = 45.0
         scale_in_value = 1.2
-        scale_out_value = 0.8
+        scale_out_value = 0.4
 
         if action == 'rotx':
             vhandle.send("rotate x by {}".format(rot_value))
@@ -1294,63 +1295,22 @@ class Molecule:
         elif action == 'scaleout':
             vhandle.send("scale by {}".format(scale_out_value))  
 
-        elif action == 'nextdih':
-            try:
-                nextdih_sel = next(self.iter_rotbonds)
-                self.current_dih = nextdih_sel
-            except: #restart if end reached
-                self.iter_rotbonds = iter(self.rotbonds)
-                nextdih_sel = next(self.iter_rotbonds)
-            if self.current_dih:
-                vhandle.send('mol delrep 2 top') #delete L side
-                vhandle.send('mol delrep 1 top') #delete previous dihedral
+        elif action == 'quicksurf':
+            vhandle.send("mol modstyle 0 {} QuickSurf 0.500000 0.500000 1.000000 0.000000".format(VMD_mol_IDX))
 
-            rotbond_sel = 'index {} {}'.format(nextdih_sel[0],nextdih_sel[1])
-            self.side = 0 #by default we rotate Left
-            to_rotate_sel = 'index ' + ' '.join([str(i) for i in self.rotbond_LR[self.current_dih][self.side].tolist()])
-            vhandle.send('mol selection {}'.format(rotbond_sel))
-            vhandle.send('mol representation {}'.format('Licorice'))
-            vhandle.send('mol addrep top')   
-            
-            vhandle.send('mol selection {}'.format(to_rotate_sel))
-            vhandle.send('mol representation {}'.format('Licorice'))
-            vhandle.send('mol addrep top')  
-            vhandle.send('mol modmaterial 2 1 Glass1')
- 
-
-        elif action == 'switch_dir':
-            if self.side == 1:
-                self.side = 0
-            else:
-                self.side = 1
-
-            to_rotate_sel = 'index ' + ' '.join([str(i) for i in self.rotbond_LR[self.current_dih][self.side].tolist()])
-            vhandle.send('mol delrep 2 top') 
-            vhandle.send('mol selection {}'.format(to_rotate_sel))
-            vhandle.send('mol representation {}'.format('Licorice'))
-            vhandle.send('mol addrep top') 
-            vhandle.send('mol modmaterial 2 1 Glass1')
-  
-
-        elif action == 'movedih':
-            #current_dih = [int(i) for i in self.current_dih.split()[1:]]
-            dih2move = self.dih_example[self.current_dih]
-            atoms2rot = self.rotbond_LR[self.current_dih][self.side]
-            #which direction?
-            dih_now = self.getDihedral(dih2move)
-            mut_dih = dih_now + 1.5
-            self.setDihedral(dih2move,mut_dih,rotsel=atoms2rot.tolist(),bonds=self.bonds)
-            self.write('/home/alejandro/rl_chemist/here.pdb')
-            vhandle.send("mol addfile {/home/alejandro/rl_chemist/here.pdb} type {pdb} first 0 last -1 step 1 waitfor 1 1")
-            #mol addfile {/home/alejandro/rl_chemist/here.pdb} type {pdb} first 0 last -1 step 1 waitfor 1 1
+        elif action == 'background':
+            vhandle.send("color Display Background lime")
+           
         else:
             pass     
      
         self.n_captions += 1
         vhandle.send("render snapshot /home/alejandro/rl_chemist/snapshots/vmdscene{}.tga".format(self.n_captions))
         im = Image.open("/home/alejandro/rl_chemist/snapshots/vmdscene{}.tga".format(self.n_captions))
-        b_and_w = np.array(im)/255
-        return b_and_w
+        np_img = np.array(im)
+        np_img = np.mean(np_img, axis=2)
+        normalized_img = np_img / 255
+        return normalized_img
         
     def _viewVMD(self, psf, pdb, xtc, vhandle, name, guessbonds):
         if name is None:
