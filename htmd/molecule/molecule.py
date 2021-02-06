@@ -1274,6 +1274,7 @@ class Molecule:
             return retval
         
     def _moveVMD(self, action='rotx'):
+        print(f'Selected action: {action}')
         vhandle = getCurrentViewer()
         rot_value = 45.0
         scale_in_value = 1.2
@@ -1313,7 +1314,6 @@ class Molecule:
         elif action == 'scaleout':
             vhandle.send("scale by {}".format(scale_out_value))  
 
-<<<<<<< HEAD
         elif action == 'nextdih':
             try:
                 nextdih_sel = next(self.iter_rotbonds)
@@ -1352,14 +1352,14 @@ class Molecule:
             vhandle.send('mol modmaterial 2 1 Glass1')
   
 
-        elif action == 'movedih':
+        elif action == 'updatedih':
             #current_dih = [int(i) for i in self.current_dih.split()[1:]]
             dih2move = self.dih_example[self.current_dih]
             atoms2rot = self.rotbond_LR[self.current_dih][self.side]
             #which direction?
             dih_now = self.getDihedral(dih2move)
             mut_dih = dih_now + 0.5
-            self.setDihedral(dih2move, mut_dih, rotsel=atoms2rot.tolist())
+            self.setDihedral(dih2move, mut_dih, rotsel=atoms2rot.tolist(), bonds=self.bonds)
             self.write('/home/alejandro/rl_chemist/here.pdb')
             vhandle.send("mol addfile {/home/alejandro/rl_chemist/here.pdb} type {pdb} first 0 last -1 step 1 waitfor 1 1")
             #mol addfile {/home/alejandro/rl_chemist/here.pdb} type {pdb} first 0 last -1 step 1 waitfor 1 1
