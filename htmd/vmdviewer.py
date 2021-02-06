@@ -70,7 +70,7 @@ class VMD:
         #	self.vmd.stdin.write( b"chan configure stdout -buffering none\n" )
         time.sleep(2)
         self.send('display reposition 500 1000')
-        self.send('display resize 800 800')
+        self.send('display resize 224 224')
         self.send('menu main on')
         self.send('display depthcue off')
         self.send('axes location Off')

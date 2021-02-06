@@ -14,6 +14,7 @@ from os import path
 import logging
 import os
 from unittest import TestCase
+from scipy import ndimage
 
 logger = logging.getLogger(__name__)
 
@@ -649,7 +650,7 @@ class Molecule:
         """
         return deepcopy(self)
 
-    def filter(self, sel, _logger=True):
+    def filter(self, sel, _logger=False):
         """Removes all atoms not included in the selection
 
         Parameters
@@ -1274,9 +1275,9 @@ class Molecule:
         
     def _moveVMD(self, action='rotx'):
         vhandle = getCurrentViewer()
-        rot_value = 15.0
+        rot_value = 45.0
         scale_in_value = 1.2
-        scale_out_value = 0.8
+        scale_out_value = 0.4
 
         if action == 'rotx':
             vhandle.send("rotate x by {}".format(rot_value))
@@ -1312,6 +1313,7 @@ class Molecule:
         elif action == 'scaleout':
             vhandle.send("scale by {}".format(scale_out_value))  
 
+<<<<<<< HEAD
         elif action == 'nextdih':
             try:
                 nextdih_sel = next(self.iter_rotbonds)
@@ -1365,6 +1367,7 @@ class Molecule:
             pass     
      
         return 1
+
         
     def _viewVMD(self, psf, pdb, xtc, vhandle, name, guessbonds):
         if name is None:
