@@ -1273,7 +1273,6 @@ class Molecule:
             return retval
         
     def _moveVMD(self, action='rotx'):
-        from PIL import Image
         vhandle = getCurrentViewer()
         rot_value = 15.0
         scale_in_value = 1.2
@@ -1287,6 +1286,25 @@ class Molecule:
 
         elif action == 'rotz':
             vhandle.send("rotate z by {}".format(rot_value))
+
+
+        elif action.startswith('mov'):
+            vector = np.array([[1, 0, 0],
+                               [0, 1, 0],
+                               [0, 0, 1]])
+
+            if '-' in action:
+                vector *= -1
+
+            if 'x' in action:
+                self.moveBy(vector[0, :])
+            elif 'y' in action:
+                self.moveBy(vector[1, :])
+            if 'z' in action:
+                self.moveBy(vector[2, :])
+
+            self.write('/home/alejandro/rl_chemist/here.pdb')            
+            vhandle.send("mol addfile {/home/alejandro/rl_chemist/here.pdb} type {pdb} first 0 last -1 step 1 waitfor 1 1")
 
         elif action == 'scalein':
             vhandle.send("scale by {}".format(scale_in_value))
@@ -1339,18 +1357,14 @@ class Molecule:
             #which direction?
             dih_now = self.getDihedral(dih2move)
             mut_dih = dih_now + 0.5
-            self.setDihedral(dih2move,mut_dih,rotsel=atoms2rot.tolist())
+            self.setDihedral(dih2move, mut_dih, rotsel=atoms2rot.tolist())
             self.write('/home/alejandro/rl_chemist/here.pdb')
             vhandle.send("mol addfile {/home/alejandro/rl_chemist/here.pdb} type {pdb} first 0 last -1 step 1 waitfor 1 1")
             #mol addfile {/home/alejandro/rl_chemist/here.pdb} type {pdb} first 0 last -1 step 1 waitfor 1 1
         else:
             pass     
      
-        self.n_captions += 1
-        vhandle.send("render snapshot /home/alejandro/rl_chemist/snapshots/vmdscene{}.tga".format(self.n_captions))
-        im = Image.open("/home/alejandro/rl_chemist/snapshots/vmdscene{}.tga".format(self.n_captions))
-        b_and_w = np.array(im).sum(axis=-1) / 765
-        return b_and_w
+        return 1
         
     def _viewVMD(self, psf, pdb, xtc, vhandle, name, guessbonds):
         if name is None:
